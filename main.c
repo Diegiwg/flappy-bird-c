@@ -2,7 +2,7 @@
 #include "include/stdlib.h"
 #include "include/windows.h"
 
-#include "draw.c" // Ref: move_to, draw_border
+HANDLE hConsole;
 
 int WINDOW_WIDTH = 20;
 int WINDOW_HEIGHT = 10;
@@ -19,8 +19,54 @@ typedef struct {
 obj_2d bird = {5, 2};
 obj_2d pipes[3] = {{20, 6}, {30, 4}, {40, 2}}; // Y limit is 6 ?
 
+void drawScoreboard();
+
+void clearScreen() { system("cls"); }
+
+void moveTo(int x, int y) {
+  COORD coord;
+  coord.X = x;
+  coord.Y = y;
+
+  SetConsoleCursorPosition(hConsole, coord);
+}
+
+void drawBorder() {
+  clearScreen();
+
+  moveTo(0, 0);
+  printf("---------------------|");
+
+  // PIPE
+  for (int i = 1; i < WINDOW_HEIGHT; i++) {
+    moveTo(21, i);
+    printf("|");
+  }
+
+  moveTo(0, 10);
+  printf("---------------------|");
+
+  drawScoreboard();
+}
+
+void clearGameArea() {
+  // clear only X for bird and pipes
+  int xCoords[] = {0, bird.x, pipes[0].x + 1, pipes[1].x + 1, pipes[2].x + 1};
+
+  for (int i = 0; i <= 5; i++) {
+    if (xCoords[i] > WINDOW_WIDTH) {
+      continue;
+    }
+
+    for (int y = 1; y < WINDOW_HEIGHT; y++) {
+      moveTo(xCoords[i], y);
+      printf(" ");
+    }
+  }
+}
+
 void drawBird() {
-  move_to(bird.x, bird.y);
+  moveTo(bird.x, bird.y);
   printf(">");
 }
 
@@ -31,32 +77,39 @@ void drawPipe(int index) {
 
   // Print the Top of Pipe
   for (int i = 1; i <= pipes[index].y; i++) {
-    move_to(pipes[index].x, i);
+    moveTo(pipes[index].x, i);
     printf("H");
   }
 
   // Print the Bottom of Pipe
   for (int i = pipes[index].y + PIPE_GAP; i < WINDOW_HEIGHT; i++) {
-    move_to(pipes[index].x, i);
+    moveTo(pipes[index].x, i);
     printf("Y");
   }
 }
 
-void draw_scoreboard() {
-  move_to(WINDOW_WIDTH + 6, WINDOW_HEIGHT / 2);
+void drawScoreboard() {
+  moveTo(WINDOW_WIDTH + 3, WINDOW_HEIGHT / 2);
   printf("Score: %d", PLAYER_POINTS);
 }
 
 void drawFrame() {
-  clear_screen();
-
-  draw_border();
-  draw_scoreboard();
+  clearGameArea();
 
   drawBird();
 
   for (int i = 0; i < 3; i++) {
     drawPipe(i);
+  }
+}
+
+void earnPoint() {
+  // if player passed in a pipe, add 1 to score
+  for (int index = 0; index < 3; index++) {
+    if (pipes[index].x == bird.x) {
+      PLAYER_POINTS++;
+      drawScoreboard();
+    }
   }
 }
 
@@ -82,15 +135,6 @@ void updatePositions() {
   }
 }
 
-void earnPoint() {
-  // if player passed in a pipe, add 1 to score
-  for (int index = 0; index < 3; index++) {
-    if (pipes[index].x == bird.x) {
-      PLAYER_POINTS++;
-    }
-  }
-}
-
 void updateGame() {
   updatePositions();
 
@@ -110,9 +154,11 @@ void updateGame() {
 }
 
 int main(void) {
+  hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+  drawBorder();
 
   while (1) {
-
     updateGame();
     drawFrame();
 
