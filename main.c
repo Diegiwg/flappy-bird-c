@@ -9,6 +9,8 @@ int WINDOW_HEIGHT = 10;
 
 int PIPE_GAP = 3;
 
+int PLAYER_POINTS = 0;
+
 typedef struct {
   int x;
   int y;
@@ -40,9 +42,16 @@ void drawPipe(int index) {
   }
 }
 
+void draw_scoreboard() {
+  move_to(WINDOW_WIDTH + 6, WINDOW_HEIGHT / 2);
+  printf("Score: %d", PLAYER_POINTS);
+}
+
 void drawFrame() {
   clear_screen();
+
   draw_border();
+  draw_scoreboard();
 
   drawBird();
 
@@ -73,6 +82,15 @@ void updatePositions() {
   }
 }
 
+void earnPoint() {
+  // if player passed in a pipe, add 1 to score
+  for (int index = 0; index < 3; index++) {
+    if (pipes[index].x == bird.x) {
+      PLAYER_POINTS++;
+    }
+  }
+}
+
 void updateGame() {
   updatePositions();
 
@@ -87,6 +105,8 @@ void updateGame() {
   if (bird.y >= WINDOW_HEIGHT) {
     bird.y = WINDOW_HEIGHT - 1;
   }
+
+  earnPoint();
 }
 
 int main(void) {
